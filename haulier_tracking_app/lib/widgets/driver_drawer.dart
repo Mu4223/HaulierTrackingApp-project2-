@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:haulier_tracking_app/models/utilization.dart';
 import 'package:haulier_tracking_app/widgets/driver_schedule.dart';
+import '../screens/utilization_form.dart';
 import '/main.dart';
 import '/models/truck.dart';
-import '../screens/truck_schedule_list.dart';
-import '../screens/truck_utilization_list.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -31,17 +30,13 @@ class _DriverDrawerState extends State<DriverDrawer> {
   void initPages() {
     _screens = [
       DriverSchedule(truck: widget.truck),
-      TruckScheduleList(myTrucks: myTrucks),
-      TruckUtilizationList(
-        myTrucks: myTrucks,
-        utilization: utilization,
-      ),
+    UtilizationForm(truck: widget.truck),
     ];
   }
 
   final List<String> _drawerTitles = [
     'Schedule',
-    'Truck Utilisation',
+    'Truck Utilization',
   ];
 
   final List<IconData> _drawerIcons = [
@@ -62,7 +57,8 @@ class _DriverDrawerState extends State<DriverDrawer> {
         final Map<String, dynamic> data = json.decode(response.body);
         for (final tempUtil in data.entries) {
           truckUtil.add(Utilization(
-              driverName: tempUtil.value['driverId'],
+              driverId: tempUtil.value['driverId'],
+              driverName: tempUtil.value['driverName'],
               truckId: tempUtil.value['truckId'],
               cargoCapacity: tempUtil.value['cargoCapacity'],
               condition: tempUtil.value['condition'],

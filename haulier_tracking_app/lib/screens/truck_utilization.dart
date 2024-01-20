@@ -42,14 +42,20 @@ class _TruckUtilizationState extends State<TruckUtilization> {
           children: [
             Card(
               child: ListTile(
-                title: Text('Driver Name'),
-                subtitle: Text('Driver Name: ${widget.utilization.driverName}'),
+                title: Text('Driver Id'),
+                subtitle: Text('Driver Id: ${widget.utilization.driverId}'),
               ),
             ),
             Card(
               child: ListTile(
                 title: Text('Truck'),
                 subtitle: Text('Truck Id: ${widget.utilization.truckId}'),
+              ),
+            ),
+            Card(
+              child: ListTile(
+                title: Text('Driver Name'),
+                subtitle: Text('Driver Name: ${widget.utilization.driverName}'),
               ),
             ),
             Card(

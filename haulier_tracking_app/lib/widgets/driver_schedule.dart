@@ -60,21 +60,17 @@ class _DriverScheduleState extends State<DriverSchedule> {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> scheduleData = json.decode(response.body);
-
-        // Cast values to Map<String, dynamic> and filter the schedule data based on plateNumber and truckId
         userSchedules =
             scheduleData.values.cast<Map<String, dynamic>>().where((schedule) {
           return schedule['truckId'] == plateNumber;
         }).toList();
 
-        for (final OmarTemp in scheduleData.entries) {
-          if (OmarTemp.value['truckId'] == plateNumber) {
-            print("keys in for loop  = ${OmarTemp.key}");
-            userScheduleskeys.add(OmarTemp.key);
+        for (final scheduleTemp in scheduleData.entries) {
+          if (scheduleTemp.value['truckId'] == plateNumber) {
+            print("keys in for loop  = ${scheduleTemp.key}");
+            userScheduleskeys.add(scheduleTemp.key);
           }
         }
-
-        // Now userSchedule contains only the schedules for the specified plateNumber (truckId)
         print("what inside this = $userScheduleskeys");
       } else {
         print('Failed to fetch schedule data: ${response.statusCode}');
@@ -110,10 +106,8 @@ class _DriverScheduleState extends State<DriverSchedule> {
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                            'Pickup Point: ${userSchedules[index]['pickupPoint']}'),
-                        Text(
-                            'Delivery Point: ${userSchedules[index]['deliveryPoint']}'),
+                        Text('Pickup Point: ${userSchedules[index]['pickupPoint']}'),
+                        Text('Delivery Point: ${userSchedules[index]['deliveryPoint']}'),
                         Text(
                           'Date: ${DateFormat('MM-dd-yyyy').format(DateTime.parse(userSchedules[index]['date']))}',
                         ),
@@ -123,47 +117,43 @@ class _DriverScheduleState extends State<DriverSchedule> {
                       ],
                     ),
                   ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      String status;
-
-                      // Check the current status of the schedule
-                      bool? currentStatus =
-                          scheduleStatus[userScheduleskeys[index]];
-
-                      if (currentStatus == true) {
-                        // If the status is 'started', change to 'finished'
-                        status = 'finish';
-
-                        // Remove the schedule from the list when 'Finish' is clicked
-                        userSchedules.removeAt(index);
-                        userScheduleskeys.removeAt(index);
-                      } else {
-                        // If the status is not 'started', change to 'started'
-                        status = 'start';
-                      }
-
-                      // Update the schedule status
-                      await updateScheduleStatus(widget.truck.truckId, status,
-                          userScheduleskeys[index]);
-
-                      // Update the UI to reflect the new status
-                      getTruckSchedule(firebaseUrl, widget.truck.plateNumber);
-
-                      // Toggle the status in the map
-                      scheduleStatus[userScheduleskeys[index]] =
-                          currentStatus == null ? true : !currentStatus;
-
-                      setState(() {});
-                    },
-                    style: ElevatedButton.styleFrom(
-                      primary: Colors.green, // Background color
-                    ),
-                    child: Text(
-                      scheduleStatus[userScheduleskeys[index]] == true
-                          ? 'Finish'
-                          : 'Start',
-                      style: TextStyle(color: Colors.white),
+                  FractionallySizedBox(
+                    widthFactor: 0.5,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        String status;
+                        // Check the current status of the schedule
+                        bool? currentStatus = scheduleStatus[userScheduleskeys[index]];
+                        if (currentStatus == true) {
+                          // If the status is 'started', change to 'finished'
+                          status = 'finish';
+                          // Remove the schedule from the list when 'Finish' is clicked
+                          userSchedules.removeAt(index);
+                          userScheduleskeys.removeAt(index);
+                        } else {
+                          // If the status is not 'started', change to 'started'
+                          status = 'start';
+                        }
+                        // Update the schedule status
+                        await updateScheduleStatus(
+                          widget.truck.truckId,
+                          status,
+                          userScheduleskeys[index],
+                        );
+                        // Update the UI to reflect the new status
+                        getTruckSchedule(firebaseUrl, widget.truck.plateNumber);
+                        // Toggle the status in the map
+                        scheduleStatus[userScheduleskeys[index]] =
+                        currentStatus == null ? true : !currentStatus;
+                        setState(() {});
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: Colors.green, // Background color
+                      ),
+                      child: Text(
+                        scheduleStatus[userScheduleskeys[index]] == true ? 'Finish' : 'Start',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ),
                 ],
@@ -171,25 +161,6 @@ class _DriverScheduleState extends State<DriverSchedule> {
             );
           },
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: 'Schedule List',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.fire_truck),
-            label: 'Truck Movement',
-          ),
-        ],
-        currentIndex: 0,
-        selectedItemColor: Colors.green,
-        onTap: (int index) {
-          if (index == 1) {
-            // addSchedule();
-          }
-        },
       ),
     );
   }

@@ -4,7 +4,6 @@ import 'package:haulier_tracking_app/models/truck.dart';
 import 'package:haulier_tracking_app/widgets/add_truck_schedule.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-
 import '../models/schedule.dart';
 import '../widgets/update_schedule.dart';
 
@@ -17,9 +16,9 @@ class TruckScheduleList extends StatefulWidget {
 }
 
 class _TruckScheduleListState extends State<TruckScheduleList> {
-  DateTime _selectedDate = DateTime.now();
-  List<Map<String, dynamic>> scheduleList =
+  List<Schedule> scheduleList =
       []; // List to store fetched schedules
+      List<String> firebaseKeys = [];
 
   final String firebaseUrl =
       'haulier-tracking-system-2a686-default-rtdb.asia-southeast1.firebasedatabase.app';
@@ -40,31 +39,32 @@ class _TruckScheduleListState extends State<TruckScheduleList> {
     });
   }
 
-  void _editSchedule(Map<String, dynamic> scheduleData) {
-    Schedule schedule = Schedule(
-      truckId: scheduleData['truckId'],
-      pickup: scheduleData['pickupPoint'],
-      delivery: scheduleData['deliveryPoint'],
-      date: DateTime.parse(scheduleData['date']),
-      time: scheduleData['time'],
-    );
+  void _editSchedule(Schedule schedule, String firebaseKey) async {
 
-    Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => UpdateSchedule(schedule: schedule)));
+    try{
+      Schedule newSchedule = await Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => UpdateSchedule(schedule: schedule,firebaseKey: firebaseKey,)));
+      int index = scheduleList.indexWhere((element) => identical(element, schedule));
+      setState(() {
+        scheduleList[index] = newSchedule;
+      });
+    }catch(error){
+      print("Truck shcedule list. error = $error");
+    }
   }
 
-  void _deleteTruck(String truckId, int index) async {
-    showDialog(
+  void _deleteSchedule(Schedule schedule, int index, String firebaseKey) async {
+    await showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Confirm Deletion'),
-          content: Text('Are you sure you want to delete this truck?'),
+          title: const Text('Confirm Deletion'),
+          content: const Text('Are you sure you want to delete this Schedule?'),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -73,7 +73,7 @@ class _TruckScheduleListState extends State<TruckScheduleList> {
               child: Text('Delete'),
               onPressed: () async {
                 try {
-                  final url = Uri.https(firebaseUrl, 'Trucks/$truckId.json');
+                  final url = Uri.https(firebaseUrl, 'Schedule/$firebaseKey.json');
 
                   final response = await http.delete(url);
 
@@ -81,14 +81,17 @@ class _TruckScheduleListState extends State<TruckScheduleList> {
                     setState(() {
                       widget.myTrucks.removeAt(index);
                     });
-                    print('Truck deleted successfully');
+                    print('Schedule deleted successfully');
                   } else {
                     print(
-                        'Failed to delete truck. Error: ${response.statusCode}');
+                        'Failed to delete Schedule. Error: ${response.statusCode}');
                   }
                 } catch (error) {
                   print('Error deleting truck: $error');
                 }
+                setState(() {
+                  scheduleList.removeAt(index);
+                });
                 Navigator.of(context).pop();
               },
             ),
@@ -103,31 +106,31 @@ class _TruckScheduleListState extends State<TruckScheduleList> {
   }
 
   void fetchScheduleData() async {
-    final url = Uri.https(firebaseUrl, 'Schedule.json'); // Firebase endpoint
-
+    final url = Uri.https(firebaseUrl, 'Schedule.json');
+    List<Schedule> tempSchedule = [];
     try {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body) as Map<String, dynamic>;
-        List<Map<String, dynamic>> schedules = [];
+        final data = json.decode(response.body);
+
 
         data.forEach((key, value) {
-          // Convert 'time' from String to TimeOfDay
-          TimeOfDay timeOfDay = TimeOfDay(
-            hour: int.parse(value['time'].split(':')[0]),
-            minute: int.parse(value['time'].split(':')[1]),
-          );
-
-          // Add the entire schedule data with the converted 'time' to the list
-          schedules.add({
-            ...value,
-            'time': timeOfDay,
-          });
+          print(value['date']);
+          firebaseKeys.add(key);
+          tempSchedule.add(
+            Schedule(
+                truckId: value['truckId'],
+                pickup: value['pickupPoint'],
+                delivery: value['deliveryPoint'],
+                date: DateTime.parse(value['date']),
+                time: TimeOfDay(hour: int.parse(value['time'].toString().split(":")[0]),
+                    minute:int.parse(value['time'].toString().split(":")[1]))
+          ));
         });
 
         setState(() {
-          scheduleList = schedules; // Assign the retrieved schedules to scheduleList
+          scheduleList = tempSchedule; // Assign the retrieved schedules to scheduleList
         });
       } else {
         throw Exception('Failed to load schedule data');
@@ -151,19 +154,19 @@ class _TruckScheduleListState extends State<TruckScheduleList> {
         child: ListView.builder(
           itemCount: scheduleList.length,
           itemBuilder: (context, index) {
-            final schedule = scheduleList[index];
+            
             return Card(
               elevation: 5.0,
               margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
               child: ListTile(
-                title: Text('Truck: ${schedule['truckId']}'),
+                title: Text('Truck: ${scheduleList[index].truckId}'),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Pickup Point: ${schedule['pickupPoint']}'),
-                    Text('Delivery Point: ${schedule['deliveryPoint']}'),
+                    Text('Pickup Point: ${scheduleList[index].pickup}'),
+                    Text('Delivery Point: ${scheduleList[index].delivery}'),
                     Text(
-                      'Date: ${DateFormat('yyyy-MM-dd').format(_selectedDate)}    Time: ${_formatTimeOfDay(schedule['time'])}',
+                      'Date: ${DateFormat('yyyy-MM-dd').format(scheduleList[index].date)}    Time: ${_formatTimeOfDay(scheduleList[index].time)}',
                     ),
                   ],
                 ),
@@ -173,13 +176,13 @@ class _TruckScheduleListState extends State<TruckScheduleList> {
                     IconButton(
                       icon: Icon(Icons.edit),
                       onPressed: () {
-                        _editSchedule(schedule);
+                        _editSchedule(scheduleList[index],firebaseKeys[index]);
                       },
                     ),
                     IconButton(
                       icon: Icon(Icons.delete),
                       onPressed: () {
-                        // _deleteTruck(s.truckId, index);
+                        _deleteSchedule(scheduleList[index], index,firebaseKeys[index]);
                       },
                     ),
                   ],

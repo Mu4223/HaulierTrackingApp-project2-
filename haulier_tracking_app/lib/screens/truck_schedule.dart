@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '/models/truck.dart';
-import '../models/schedule.dart'; // Assuming you have a Schedule model
+import '../models/schedule.dart';
 
 class TruckSchedules extends StatefulWidget {
   final Truck truck;
@@ -19,7 +19,7 @@ class _TruckSchedulesState extends State<TruckSchedules> {
   Future<void> fetchSchedules(DateTime date) async {
     final String firebaseUrl =
         'haulier-tracking-system-2a686-default-rtdb.asia-southeast1.firebasedatabase.app';
-    final url = Uri.https(firebaseUrl, 'Trucks/schedule.json'); // Adjust this to your actual endpoint
+    final url = Uri.https(firebaseUrl, 'Trucks/schedule.json');
 
     try {
       final response = await http.get(url);
@@ -48,7 +48,6 @@ class _TruckSchedulesState extends State<TruckSchedules> {
     }
   }
 
-  // ... (rest of the code remains the same)
   @override
   void initState() {
     fetchSchedules(selectedDate);

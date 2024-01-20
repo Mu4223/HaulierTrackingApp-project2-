@@ -38,7 +38,7 @@ class _UpdateTruckState extends State<UpdateTruck> {
 
       if (response.statusCode == 200) {
         Truck updatedTruck = Truck(
-          truckId: plateNumber,
+          truckId: widget.truck.truckId,
           driverId: driverIdController.text,
           brand: brandController.text,
           model: modelController.text,
@@ -57,7 +57,6 @@ class _UpdateTruckState extends State<UpdateTruck> {
   @override
   void initState() {
     super.initState();
-    // Set the initial value of the controller to widget
     driverIdController.text = '${widget.truck.driverId}';
     brandController.text = '${widget.truck.brand}';
     modelController.text = '${widget.truck.model}';

@@ -4,7 +4,8 @@ import 'dart:convert';
 import '/models/truck.dart';
 
 class RegisterTruck extends StatefulWidget {
-  RegisterTruck({super.key});
+  final List<Truck> myTrucks;
+  RegisterTruck({super.key, required this.myTrucks});
   @override
   _RegisterTruckState createState() => _RegisterTruckState();
 }
@@ -20,33 +21,29 @@ class _RegisterTruckState extends State<RegisterTruck> {
       'haulier-tracking-system-2a686-default-rtdb.asia-southeast1.firebasedatabase.app';
 
   void _registerTruck(context) async {
-
+    for(final tempTruckForTesting in widget.myTrucks){
+      if(tempTruckForTesting.driverId.toUpperCase() == driverIdController.text.toUpperCase()){
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:
+            Text('Driver ID exist')
+        ));
+        return;
+      }else if(tempTruckForTesting.plateNumber.toUpperCase() == plateNumberController.text.toUpperCase()){
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:
+         Text('Platen-number exist')
+        ));
+        return;
+      }
+    }
     final url = Uri.https(firebaseurl, 'Trucks.json');
-
     try {
-      // final response = await http.get(url);
-      // final bool driverExists =
-      //     response.statusCode == 200 && json.decode(response.body) != null;
-      // final bool truckExists =
-      //     response.statusCode == 200 && json.decode(response.body) != null;
-
-      // if (driverExists) {
-      //   ScaffoldMessenger.of(context).showSnackBar(
-      //     const SnackBar(content: Text('Driver ID already in exiset')),
-      //   );
-      // } else if (truckExists) {
-      //   ScaffoldMessenger.of(context).showSnackBar(
-      //     const SnackBar(content: Text('Truck already exist')),
-      //   );
-      // } else {
-        final postResponse = await http.post(
+          final postResponse = await http.post(
           url,
           body: json.encode({
-            'driverId': driverIdController.text,
-            'password': plateNumberController.text,
+            'driverId': driverIdController.text.toUpperCase(),
+            'password': plateNumberController.text.toUpperCase(),
             'brand': brandController.text,
             'model': modelController.text,
-            'plateNumber': plateNumberController.text,
+            'plateNumber': plateNumberController.text.toUpperCase(),
           }),
         );
 
@@ -64,7 +61,6 @@ class _RegisterTruckState extends State<RegisterTruck> {
         } else {
           print('Failed to add truck data: ${postResponse.statusCode}');
         }
-      // }
     } catch (error) {
       print('Error: $error');
     }

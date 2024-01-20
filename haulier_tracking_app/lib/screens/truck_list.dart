@@ -60,8 +60,7 @@ class _TruckListState extends State<TruckList> {
     );
   }
 
-  void _viewTruckSchedule(Truck truck) {
-    // Navigate to TruckScheduleList passing the truck details
+  void _viewTruckDetail(Truck truck) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -84,29 +83,37 @@ class _TruckListState extends State<TruckList> {
         child: ListView.builder(
           itemCount: widget.myTrucks.length,
           itemBuilder: (context, index) {
-            final truck = widget.myTrucks[index];
+
             return Card(
               margin: EdgeInsets.all(8.0),
               elevation: 4.0,
               child: ListTile(
-                title: Text(truck.plateNumber),
-                subtitle: Text(truck.brand),
+                title: Text(widget.myTrucks[index].plateNumber),
+                subtitle: Text(widget.myTrucks[index].brand),
                 onTap: () {
-                  _viewTruckSchedule(truck);
+                  _viewTruckDetail(widget.myTrucks[index]);
                 },
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
                       icon: Icon(Icons.edit),
-                      onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) =>  UpdateTruck(truck: truck)));
-                      },
+                      onPressed: () async{
+                        try{
+                          Truck updateTruck = await Navigator.push(context, MaterialPageRoute(builder: (context) =>  UpdateTruck(truck: widget.myTrucks[index])));
+                          setState(() {
+                            widget.myTrucks[index]= updateTruck;
+                          });
+                        }
+                        catch (error){
+                          print(error);
+                        }
+                        },
                     ),
                     IconButton(
                       icon: Icon(Icons.delete),
                       onPressed: () {
-                        _deleteTruck(truck.truckId, index);
+                        _deleteTruck(widget.myTrucks[index].truckId, index);
                       },
                     ),
                   ],
@@ -118,20 +125,17 @@ class _TruckListState extends State<TruckList> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          // Navigate to the RegisterTruck screen and wait for a result
           Truck? newTruck = await Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => RegisterTruck()),
+            MaterialPageRoute(builder: (context) => RegisterTruck(myTrucks: widget.myTrucks,)),
           );
 
           // Check if newTruck is not null before using it
           if (newTruck != null) {
-            // Update the state with the newTruck if it's not null
             setState(() {
               widget.myTrucks.add(newTruck);
             });
           } else {
-            // Handle the case where newTruck is null (user canceled or an error occurred)
             print('Registration canceled or encountered an error.');
           }
         },

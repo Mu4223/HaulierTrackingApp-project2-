@@ -9,9 +9,8 @@ import '../models/utilization.dart';
 
 class UtilizationForm extends StatefulWidget {
   final Truck truck;
-  final Utilization utilization;
 
-  UtilizationForm({super.key, required this.truck, required this.utilization});
+  UtilizationForm({super.key, required this.truck});
 
   @override
   _UtilizationFormState createState() => _UtilizationFormState();
@@ -22,10 +21,19 @@ class _UtilizationFormState extends State<UtilizationForm> {
       'haulier-tracking-system-2a686-default-rtdb.asia-southeast1.firebasedatabase.app';
   final _formKey = GlobalKey<FormState>();
   List<Utilization> utilization = [];
-  final TextEditingController cargoCapacityController = TextEditingController();
-  final TextEditingController conditionController = TextEditingController();
-  final TextEditingController maintenanceController = TextEditingController();
-  final TextEditingController driverNameController = TextEditingController();
+  String keyId = '';
+  TextEditingController cargoCapacityController = TextEditingController();
+  String selectedCondition  = "Excellent";
+  TextEditingController maintenanceController = TextEditingController();
+  TextEditingController driverNameController = TextEditingController();
+
+  List<String> truckConditions = [
+    'Excellent',
+    'Good',
+    'Average',
+    'Poor',
+    'Needs Repairs',
+  ];
 
   bool loading = true;
 
@@ -42,29 +50,34 @@ class _UtilizationFormState extends State<UtilizationForm> {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         for (final tempUtil in data.entries) {
-          utilizationList.add(Utilization(
-            driverName: tempUtil.value['driverName'].toString(),
-            truckId: widget.truck.truckId,
-            cargoCapacity: tempUtil.value['cargoCapacity'].toString(),
-            condition: tempUtil.value['condition'].toString(),
-            maintenance: tempUtil.value['maintenance'].toString(),
-          ));
-        }
-
-        // Check if the utilizationList is not empty before accessing its elements
-        if (utilizationList.isNotEmpty) {
-          utilizationList = utilizationList
-              .where((element) => element.truckId == widget.truck.truckId)
-              .toList();
-
-          if (utilizationList.isNotEmpty &&
-              utilizationList[0].cargoCapacity.isNotEmpty) {
-            Navigator.push(context, MaterialPageRoute(
-              builder: (context) {
-                return DriverDrawer(truck: widget.truck);
-              },
+          print("Truck Plate Number = ${widget.truck.plateNumber}");
+          print(tempUtil.value['truckId']);
+          if (widget.truck.plateNumber.toString().toUpperCase() ==
+              tempUtil.value['truckId'].toString().toUpperCase()) {
+                keyId = tempUtil.key;
+            utilizationList.add(Utilization(
+              driverId: tempUtil.value['driverId'],
+              driverName: tempUtil.value['driverName'],
+              truckId: tempUtil.value['truckId'],
+              cargoCapacity: tempUtil.value['cargoCapacity'],
+              condition: tempUtil.value['condition'],
+              maintenance: tempUtil.value['maintenance'],
             ));
           }
+        }
+        print("Key =  $keyId");
+        utilization = utilizationList;
+
+        if (utilizationList.isNotEmpty) {
+          driverNameController =
+              TextEditingController(text: utilization[0].driverName);
+          cargoCapacityController =
+              TextEditingController(text: utilization[0].cargoCapacity);
+          selectedCondition = utilization[0].condition;
+          maintenanceController =
+              TextEditingController(text: utilization[0].maintenance);
+        }else{
+          selectedCondition = 'Excellent';
         }
 
         setState(() {
@@ -85,29 +98,68 @@ class _UtilizationFormState extends State<UtilizationForm> {
     }
   }
 
-  void _updateUtilization(context) async {
-    final url = Uri.https(firebaseurl, 'Utilization.json');
+  void _postUtilization(context) async {
+    if (_formKey.currentState!.validate()) {
+      final url = Uri.https(firebaseurl, 'Utilization.json');
 
-    try {
-      final response = await http.put(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'driverId': driverNameController.text,
-          'truckId': widget.truck.truckId,
-          'cargoCapacity': cargoCapacityController.text,
-          'condition': conditionController.text,
-          'maintenance': maintenanceController.text,
-        }),
-      );
+      try {
+        final response = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({
+            'driverId': widget.truck.driverId,
+            'truckId': widget.truck.plateNumber,
+            'driverName': driverNameController.text,
+            'cargoCapacity': cargoCapacityController.text,
+            'condition': selectedCondition,
+            'maintenance': maintenanceController.text,
+          }),
+        );
 
-      if (response.statusCode == 200) {
-        print('Succesfully added');
-      } else {
-        throw Exception('Failed to add truck data to Firebase');
+        if (response.statusCode == 200) {
+          print('Succesfully added');
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (ctx) => DriverDrawer(truck: widget.truck)));
+        } else {
+          throw Exception('Failed to add truck data to Firebase');
+        }
+      } catch (error) {
+        print('Error adding truck data: $error');
       }
-    } catch (error) {
-      print('Error adding truck data: $error');
+    }
+  }
+   void _updateUtilization(context) async {
+    if (_formKey.currentState!.validate() && keyId.isNotEmpty) {
+      final url = Uri.https(firebaseurl, 'Utilization/${keyId}.json');
+
+      try {
+        final response = await http.put(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({
+            'driverId': widget.truck.driverId,
+            'truckId': widget.truck.plateNumber,
+            'driverName': driverNameController.text,
+            'cargoCapacity': cargoCapacityController.text,
+            'condition': selectedCondition,
+            'maintenance': maintenanceController.text,
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          print('Succesfully added');
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (ctx) => DriverDrawer(truck: widget.truck)));
+        } else {
+          throw Exception('Failed to add truck data to Firebase');
+        }
+      } catch (error) {
+        print('Error adding truck data: $error');
+      }
     }
   }
 
@@ -119,100 +171,120 @@ class _UtilizationFormState extends State<UtilizationForm> {
 
   @override
   Widget build(BuildContext context) {
-    Widget content = Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            TextField(
-              decoration: InputDecoration(
-                hintText: 'Driver ID: ${widget.truck.driverId}',
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+    Widget content = SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextField(
+                decoration: InputDecoration(
+                  hintText: 'Truck ID: ${widget.truck.plateNumber}',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
+                readOnly: true, // Ensure that the field is not editable
               ),
-              readOnly: true, // Ensure that the field is not editable
-            ),
-            TextField(
-              decoration: InputDecoration(
-                hintText: 'Truck ID: ${widget.truck.truckId}',
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+              SizedBox(height: 20,),
+              TextFormField(
+                controller: driverNameController,
+                decoration: InputDecoration(
+                  labelText: 'Driver Name',
+                  hintText: 'Enter Driver Name',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter cargo capacity';
+                  }
+                  return null;
+                },
               ),
-              readOnly: true, // Ensure that the field is not editable
-            ),
-            TextFormField(
-              controller: cargoCapacityController,
-              decoration: InputDecoration(
-                hintText: 'Cargo Capacity ${widget.utilization.cargoCapacity}',
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+              SizedBox(height: 20,),
+              TextFormField(
+                controller: cargoCapacityController,
+                decoration: InputDecoration(
+                  labelText: 'Cargo Capacity',
+                  hintText: 'Enter Cargo Capacity',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter cargo capacity';
+                  }
+                  return null;
+                },
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter cargo capacity';
-                }
-                return null;
-              },
-            ),
-            TextFormField(
-              controller: conditionController,
-              decoration: InputDecoration(
-                labelText: 'Condition',
-                hintText: 'Enter Truck Condition',
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter Truck Condition';
-                }
-                return null;
-              },
-            ),
-            TextFormField(
-              controller: maintenanceController,
-              decoration: InputDecoration(
-                labelText: 'Maintenance',
-                hintText: 'Enter Truck Maintenance Schedule',
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter Truck Maintenance Schedule';
-                }
-                return null;
-              },
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (ctx) => DriverDrawer(truck: widget.truck)));
+              SizedBox(height: 20,),
+              Text(' Truck Condition', style: TextStyle(fontSize: 16),),
+              SizedBox(height: 10,),
+              DropdownMenu<String>(
+                enableSearch: true,
+                width: MediaQuery.of(context).size.width * 0.9,
+                initialSelection: selectedCondition,
 
-                // _submitForm();
-              },
-              child: Text('Submit'),
-            ),
-          ],
+                // Set to null if the list is empty,
+                onSelected: (String? value) {
+                  // This is called when the user selects an item.
+                  setState(() {
+                    selectedCondition = value!;
+                  });
+                },
+                dropdownMenuEntries:
+                truckConditions.map<DropdownMenuEntry<String>>((String value) {
+                  return DropdownMenuEntry<String>(
+                    value: value,
+                    label: value,
+                  );
+                }).toList(),
+              ),
+              SizedBox(height: 20,),
+              TextFormField(
+                controller: maintenanceController,
+                decoration: InputDecoration(
+                  labelText: 'Maintenance Schedule',
+                  hintText: 'Enter Truck Maintenance Schedule',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter Truck Maintenance Schedule';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  if(utilization.isNotEmpty){
+                    print("PUT REQUEST");
+                    _updateUtilization(context);
+                  }else{
+                    print("POST REQUEST");
+                    _postUtilization(context);
+                  }
+                  // _submitForm();
+                },
+                child: Text('Submit'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -224,26 +296,10 @@ class _UtilizationFormState extends State<UtilizationForm> {
 
     return Scaffold(
         appBar: AppBar(
+          centerTitle: true,
+          automaticallyImplyLeading: false,
           title: Text('Utilization Form'),
         ),
         body: content);
-  }
-
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-
-      // Create a Utilization object with the entered data
-      Utilization utilization = Utilization(
-        driverName: driverNameController.text,
-        truckId: widget.truck.truckId,
-        cargoCapacity: cargoCapacityController.text,
-        condition: conditionController.text,
-        maintenance: maintenanceController.text,
-      );
-
-      // Use this utilization object as needed (e.g., add to Firebase)
-      print('Utilization data submitted: $utilization');
-    }
   }
 }

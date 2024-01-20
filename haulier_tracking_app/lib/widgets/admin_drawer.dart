@@ -67,8 +67,9 @@ class _AdminDrawerState extends State<AdminDrawer> {
         final Map<String, dynamic> data = json.decode(response.body);
         for (final tempUtil in data.entries) {
           truckUtil.add(Utilization(
-              driverName: tempUtil.value['driverId'],
+              driverId: tempUtil.value['driverId'],
               truckId: tempUtil.value['truckId'],
+              driverName: tempUtil.value['driverName'],
               cargoCapacity: tempUtil.value['cargoCapacity'],
               condition: tempUtil.value['condition'],
               maintenance: tempUtil.value['maintenance']));
@@ -88,21 +89,21 @@ class _AdminDrawerState extends State<AdminDrawer> {
 
     try {
       final response = await http.get(url);
-      List<Truck> anothertempUtil = [];
+      List<Truck> tempTrucks = [];
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        for (final tempUtil in data.entries) {
-          anothertempUtil.add(Truck(
-            truckId: tempUtil.key,
-            driverId: tempUtil.value['driverId'],
-            brand: tempUtil.value['brand'],
-            model: tempUtil.value['model'],
-            plateNumber: tempUtil.value['plateNumber'],
+        for (final tempTruck in data.entries) {
+          tempTrucks.add(Truck(
+            truckId: tempTruck.key,
+            driverId: tempTruck.value['driverId'],
+            brand: tempTruck.value['brand'],
+            model: tempTruck.value['model'],
+            plateNumber: tempTruck.value['plateNumber'],
           ));
         }
       }
       setState(() {
-        myTrucks = anothertempUtil;
+        myTrucks = tempTrucks;
         initPages();
       });
     } catch (error) {

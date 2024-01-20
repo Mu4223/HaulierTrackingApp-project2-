@@ -45,10 +45,13 @@ class _UpdateUtilizationState extends State<UpdateUtilization> {
           'condition': _conditionController.text,
           'cargoCapacity': _cargoCapacityController,
           'maintenance': _maintenanceController,
+
+          
         }),
       );
       if (response.statusCode == 200) {
         Utilization updatedUtil = Utilization(
+          driverId: widget.utilization.driverId,
           truckId: widget.utilization.truckId,
           driverName: _driverNameController.text,
           cargoCapacity: _cargoCapacityController.text,

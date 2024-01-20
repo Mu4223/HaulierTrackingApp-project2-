@@ -1,4 +1,5 @@
 class Utilization {
+  String driverId;
   String driverName;
   String truckId;
   String cargoCapacity;
@@ -6,6 +7,7 @@ class Utilization {
   String maintenance;
 
   Utilization({
+    required this.driverId,
     required this.driverName,
     required this.truckId,
     required this.cargoCapacity,

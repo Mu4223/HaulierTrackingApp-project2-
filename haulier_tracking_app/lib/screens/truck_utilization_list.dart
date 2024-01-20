@@ -74,21 +74,23 @@ class _TruckUtilizationListState extends State<TruckUtilizationList> {
           ),
         ),
         child: ListView.builder(
-          itemCount: widget.myTrucks.length,
+          // itemCount: widget.myTrucks.length,
+          itemCount: widget.utilization.length,
+
           itemBuilder: (context, index) {
-            final truck = widget.myTrucks[index];
+            final truck = widget.utilization[index];
             return Card(
               margin: EdgeInsets.all(8.0),
               elevation: 4.0,
               child: ListTile(
-                title: Text(truck.plateNumber),
-                subtitle: Text(truck.brand),
+                title: Text(truck.truckId),
+                subtitle: Text(truck.driverName),
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          TruckUtilization(utilization: widget.utilization[index]),
+                      builder: (context) => TruckUtilization(
+                          utilization: truck),
                     ),
                   );
                   ;

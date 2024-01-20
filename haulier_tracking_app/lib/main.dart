@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:haulier_tracking_app/models/utilization.dart';
-import 'package:haulier_tracking_app/widgets/add_utilization.dart';
-import 'package:haulier_tracking_app/widgets/driver_drawer.dart';
+import '/models/utilization.dart';
+import '/screens/utilization_form.dart';
 import '/widgets/admin_drawer.dart';
 import '../models/truck.dart';
 import 'dart:convert';
@@ -37,7 +36,7 @@ enum UserType { login, admin }
 
 class _MyHomePageState extends State<MyHomePage> {
   final List<Utilization> utilization = [];
-  late Utilization util;
+  late final Utilization util;
   UserType _userType = UserType.admin;
   final TextEditingController driverIdController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -46,40 +45,67 @@ class _MyHomePageState extends State<MyHomePage> {
       'haulier-tracking-system-2a686-default-rtdb.asia-southeast1.firebasedatabase.app';
 
   void _driverLogin() async {
-    // final url = Uri.https(firebaseurl, 'Trucks.json');
-    // List<Truck> anotherTempTruck = [];
-    // try {
-    //   final response = await http.get(url);
-    //   if (response.statusCode == 200) {
-    //     final Map<String, dynamic> data = json.decode(response.body);
-    //     for (final tempTruck in data.entries) {
-    //       anotherTempTruck.add(Truck(
-    //         truckId: tempTruck.key,
-    //         driverId: tempTruck.value['driverId'],
-    //         brand: tempTruck.value['brand'],
-    //         model: tempTruck.value['model'],
-    //         plateNumber: tempTruck.value['plateNumber'],
-    //       ));
-    //     }
-    //     print(response.body);
-    //     for (final truck in anotherTempTruck) {
-            
-    //       driverIdController.text.toUpperCase().contains( truck.driverId) &&
-    //           passwordController.text.toUpperCase().contains(truck.plateNumber)?  
-            Navigator.of(context)
-                .pushReplacement(MaterialPageRoute(builder: (ctx) {
-              return UpdateUtilization(utilization: util);
-            }));
-            // :Container();
-          
+    final url = Uri.https(firebaseurl, 'Trucks.json');
+    List<Truck> anotherTempTruck = [];
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        for (final tempTruck in data.entries) {
+          anotherTempTruck.add(Truck(
+            truckId: tempTruck.key,
+            driverId: tempTruck.value['driverId'],
+            brand: tempTruck.value['brand'],
+            model: tempTruck.value['model'],
+            plateNumber: tempTruck.value['plateNumber'],
+          ));
         }
-  //     } else {
-  //       print('failed to add data');
-  //     }
-  //   } catch (error) {
-  //     print('Error = $error');
-  //   }
-  // }
+        bool checkUserLogin = false;
+        for (final truck in anotherTempTruck) {
+          print(
+              "user id = ${driverIdController.text.toUpperCase()} : ${truck.driverId.toString().toUpperCase()}");
+          print(
+              "password = ${passwordController.text.toUpperCase()} : ${truck.plateNumber.toString().toUpperCase()}");
+
+          if (driverIdController.text.toUpperCase().toString() ==
+                  truck.driverId.toString().toUpperCase() &&
+              passwordController.text.toUpperCase().toString() ==
+                  truck.plateNumber.toString().toUpperCase()) {
+            checkUserLogin = true;
+            Navigator.of(context).push(MaterialPageRoute(builder: (ctx) {
+              return UtilizationForm(
+                truck: truck,
+              );
+            }));
+          }
+        }
+        if(!checkUserLogin){
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text('Login Failed'),
+                content: Text('Invalid username or password!'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+
+      } else {
+        print("Can not retrieve data ");
+      }
+    } catch (error) {
+      print('Error = $error');
+    }
+  }
 
   void _adminLogin() async {
     if (driverIdController.text == 'admin' &&
@@ -162,9 +188,10 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ),
                     Container(
-                      child: Image.network(
-                        'https://mcdn.wallpapersafari.com/medium/2/58/IXerTc.jpg',
-                        width: MediaQuery.of(context).size.width,
+                      child: Image(
+                        image: AssetImage(
+                          'images/background_image.jpg',
+                        ),
                       ),
                     ),
                     SizedBox(height: 40.0),
@@ -186,8 +213,10 @@ class _MyHomePageState extends State<MyHomePage> {
                       decoration: InputDecoration(
                         labelText: 'Username',
                         hintText: 'Enter username',
-                        filled: true, // Set to true to enable filling
-                        fillColor: Colors.white, // Set the background color
+                        filled: true,
+                        // Set to true to enable filling
+                        fillColor: Colors.white,
+                        // Set the background color
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -206,8 +235,10 @@ class _MyHomePageState extends State<MyHomePage> {
                       decoration: InputDecoration(
                         labelText: 'Password',
                         hintText: 'Enter password',
-                        filled: true, // Set to true to enable filling
-                        fillColor: Colors.white, // Set the background color
+                        filled: true,
+                        // Set to true to enable filling
+                        fillColor: Colors.white,
+                        // Set the background color
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),

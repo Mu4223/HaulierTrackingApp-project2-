@@ -30,6 +30,7 @@ class _AddTruckScheduleState extends State<AddTruckSchedule> {
   @override
   void initState() {
     super.initState();
+    _plateNumber = widget.truck.first.plateNumber;
     _selectedDate = widget.schedule?.date ?? DateTime.now();
     _selectedTime = widget.schedule?.time ?? TimeOfDay.now();
   }
@@ -223,7 +224,6 @@ class _AddTruckScheduleState extends State<AddTruckSchedule> {
 
       if (response.statusCode == 200) {
         Navigator.pop(context);
-        // Successfully added to both tables
         _clearFields();
       } else {
         throw Exception('Failed to add truck data to Firebase');

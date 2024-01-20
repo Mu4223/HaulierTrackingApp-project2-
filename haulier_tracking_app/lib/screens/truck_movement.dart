@@ -25,7 +25,7 @@ class _TruckMovementState extends State<TruckMovement> {
   }
 
   void fetchScheduleData() async {
-    final url = Uri.https(firebaseUrl, 'Schedule.json'); // Firebase endpoint
+    final url = Uri.https(firebaseUrl, 'Schedule.json');
 
     try {
       final response = await http.get(url);

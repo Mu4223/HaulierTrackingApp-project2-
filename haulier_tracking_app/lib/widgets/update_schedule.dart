@@ -6,8 +6,9 @@ import 'package:http/http.dart' as http;
 
 class UpdateSchedule extends StatefulWidget {
   final Schedule schedule;
+  final String firebaseKey;
 
-  UpdateSchedule({required this.schedule});
+  UpdateSchedule({required this.schedule, required this.firebaseKey});
 
   @override
   _UpdateScheduleState createState() => _UpdateScheduleState();
@@ -27,7 +28,7 @@ class _UpdateScheduleState extends State<UpdateSchedule> {
   void initState() {
     super.initState();
     _selectedDate = widget.schedule.date;
-    _selectedTime = TimeOfDay.fromDateTime(widget.schedule.date);
+    _selectedTime = widget.schedule.time;
     _pickupPointController.text = widget.schedule.pickup;
     _deliveryPointController.text = widget.schedule.delivery;
   }
@@ -45,7 +46,7 @@ class _UpdateScheduleState extends State<UpdateSchedule> {
   void _presentDatePicker() {
     showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: widget.schedule.date,
       firstDate: DateTime(2021),
       lastDate: DateTime(2100),
     ).then((pickedDate) {
@@ -61,7 +62,7 @@ class _UpdateScheduleState extends State<UpdateSchedule> {
   void _presentTimePicker() {
     showTimePicker(
       context: context,
-      initialTime: _selectedTime,
+      initialTime: widget.schedule.time,
       initialEntryMode: TimePickerEntryMode.input,
       builder: (BuildContext context, Widget? child) {
         return MediaQuery(
@@ -82,15 +83,16 @@ class _UpdateScheduleState extends State<UpdateSchedule> {
  void _updateSchedule() async {
     final url = Uri.https(
       firebaseUrl,
-      'Schedule/${widget.schedule.truckId}.json',
+      'Schedule/${widget.firebaseKey}.json',
     );
-    print('truckid ${widget.schedule.truckId}');
+    print('Schedule ${widget.firebaseKey}');
 
     try {
       final response = await http.put(
         url,
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
+          'truckId': widget.schedule.truckId,
           'pickupPoint': _pickupPointController.text,
           'deliveryPoint': _deliveryPointController.text,
           'date': _selectedDate.toIso8601String(),
@@ -106,10 +108,9 @@ class _UpdateScheduleState extends State<UpdateSchedule> {
         time: _selectedTime,
           
         );
-        Navigator.pop(context, updatedTruck);
 
       if (response.statusCode == 200) {
-        Navigator.pop(context);
+        Navigator.pop(context, updatedTruck);
       } else {
         throw Exception('Failed to update schedule data in Firebase');
       }
